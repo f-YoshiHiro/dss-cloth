@@ -13,6 +13,9 @@
 // global header
 #include "global_headers.h"
 
+// util
+#include "jagged_array.h"
+
 #ifdef OPEN_MP
 #include<omp.h>
 #endif // OPEN_MP
