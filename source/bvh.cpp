@@ -368,6 +368,39 @@ double ComputeDistanceFaceVertex
 	return (vec_foot - vec_vertex).norm();
 }
 
+double ComputeDistanceFaceVertex
+	(double& w0,
+	double& w1,
+	double& w2,
+	EigenVector3& vec_direction,
+	///////////////
+	const EigenVector3& vec_triangle_vertex0,
+	const EigenVector3& vec_triangle_vertex1,
+	const EigenVector3& vec_triangle_vertex2,
+	const EigenVector3& vec_vertex
+	)
+{
+	EigenVector3 vec_0 = vec_triangle_vertex0 - vec_triangle_vertex2;
+	EigenVector3 vec_1 = vec_triangle_vertex1 - vec_triangle_vertex2;
+
+	double t0 = vec_0.dot(vec_0);
+	double t1 = vec_1.dot(vec_1);
+	double t2 = vec_0.dot(vec_1);
+	double t3 = vec_0.dot(vec_vertex - vec_triangle_vertex2);
+	double t4 = vec_1.dot(vec_vertex - vec_triangle_vertex2);
+	double determinant = t0*t1 - t2*t2;
+	double inverse_determinat = 1.0 / determinant;
+
+	w0 = (+t1*t3 - t2*t4) * inverse_determinat;
+	w1 = (-t2*t3 - t0*t4) * inverse_determinat;
+	w2 = 1 - w0 - w1;
+
+	EigenVector3 vec_foot = w0*vec_triangle_vertex0 + w1*vec_triangle_vertex1 + w2*vec_triangle_vertex2;
+	vec_direction = vec_foot.normalized();
+
+	return (vec_foot - vec_vertex).norm();
+}
+
 bool IsContactFaceVertex
 	(int index_triangle_vertex0,
 	int index_triangle_vertex1,
@@ -395,4 +428,86 @@ bool IsContactFaceVertex
 	if (w2 < -margin || w2 > 1 + margin) return false;
 
 	return true;
+}
+
+bool IsContactFaceVertex
+	(double& distance,
+	EigenVector3& vec_direction,
+	///////////////
+	const EigenVector3& vec_triangle_vertex0,
+	const EigenVector3& vec_triangle_vertex1,
+	const EigenVector3& vec_triangle_vertex2,
+	const EigenVector3& vec_vertex,
+	const AABB& aabb,
+	const double delta)
+{
+	if (!aabb.IsInside(vec_vertex.x(), vec_vertex.y(), vec_vertex.z())) return false;
+
+	double height = fabs(Height(vec_triangle_vertex0, vec_triangle_vertex1, vec_triangle_vertex2, vec_vertex));
+	if (height > delta) return false;
+
+	double w0, w1, w2;
+	distance = ComputeDistanceFaceVertex(w0, w1, w2, vec_triangle_vertex0, vec_triangle_vertex1, vec_triangle_vertex2, vec_vertex);
+	if (distance > delta) return false;
+
+
+
+	double margin = 0.0;
+	if (w0 < -margin || w0 > 1 + margin) return false;
+	if (w1 < -margin || w1 > 1 + margin) return false;
+	if (w2 < -margin || w2 > 1 + margin) return false;
+
+	return true;
+}
+
+bool HasCollision
+	(double& distance,
+	EigenVector3& vec_direction,
+	///////////////
+	int index_bvh,
+	const EigenVector3& vec_vertex,
+	const EigenVectorXs& vec_vertices,
+	const std::vector<int>& triangles,
+	const std::vector<NodeBVH>& node_bvhs,
+	const std::vector<AABB>& aabb_bvhs)
+{
+	// if vec_vertex is not inside of B.B., return false
+	if (!aabb_bvhs[index_bvh].IsInside(vec_vertex.x(), vec_vertex.y(), vec_vertex.z())) return false;
+
+	// if this is leaf node, compute distance
+	if (node_bvhs[index_bvh].index_child_[0] == -1)
+	{
+		int index_triangle = node_bvhs[index_bvh].index_child_[1];
+		assert(index_triangle >= 0);
+
+		int i_tri_vert0 = triangles[index_triangle * 3 + 0];
+		int i_tri_vert1 = triangles[index_triangle * 3 + 1];
+		int i_tri_vert2 = triangles[index_triangle * 3 + 2];
+
+		const bool is_contact = IsContactFaceVertex
+								(distance, 
+								vec_direction, 
+								vec_vertices.block_vector(i_tri_vert0), 
+								vec_vertices.block_vector(i_tri_vert1), 
+								vec_vertices.block_vector(i_tri_vert2),
+								vec_vertex,
+								aabb_bvhs[index_bvh],
+								0.01);
+
+		if (is_contact) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	// if this is internal node, do recursion
+	HasCollision
+		(distance, vec_direction,
+		node_bvhs[index_bvh].index_child_[0], vec_vertex, vec_vertices, triangles, node_bvhs, aabb_bvhs);
+
+	HasCollision
+		(distance, vec_direction,
+		node_bvhs[index_bvh].index_child_[1], vec_vertex, vec_vertices, triangles, node_bvhs, aabb_bvhs);
 }

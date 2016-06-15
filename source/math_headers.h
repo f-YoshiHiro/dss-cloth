@@ -51,4 +51,6 @@ typedef Eigen::Triplet<ScalarType,IndexType> SparseMatrixTriplet;
 // eigen 2 glm, glm 2 eigen
 glm::vec3 Eigen2GLM(const EigenVector3& eigen_vector);
 EigenVector3 GLM2Eigen(const glm::vec3& glm_vector);
+
+double Height(const EigenVector3& v1, const EigenVector3& v2, const EigenVector3& v3, const EigenVector3& v4); // Height of Tetrahedron
 #endif

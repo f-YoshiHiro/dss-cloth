@@ -510,6 +510,26 @@ void ObjMesh::read_from_file(char* filename)
         m_colors.push_back(mat_color);
         //m_colors.push_back(*iter);
     }
+
+	// for collision
+	vec_vertices_.resize(m_positions.size()*3);
+	triangles_.resize(m_indices.size());
+
+	for (int i = 0; i < m_positions.size(); ++i)
+	{
+		vec_vertices_.block_vector(i) = GLM2Eigen(m_positions[i]);
+	}
+
+	for (int i = 0; i < triangles_.size(); ++i)
+	{
+		triangles_[i] = m_indices[i];
+	}
+}
+
+void ObjMesh::InitCollision()
+{
+	//index_root_ = MakeBVHTopologyTopDown(node_bvhs, vec_vertices_, triangles_);
+	//BuildBoundingBox(index_root_, 0.01, aabb_bvhs, vec_vertices_, triangles_, node_bvhs);
 }
 
 bool ObjMesh::StaticIntersectionTest(const EigenVector3& p, EigenVector3& normal, ScalarType& dist)

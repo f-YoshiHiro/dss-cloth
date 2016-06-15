@@ -49,6 +49,8 @@
 #define DEFAULT_MODEL "./mesh_models/frog_reg.mesh"
 #define DEFAULT_OBJ_MODEL "./obj_models/bunny.obj"
 
+#define OBJ_ARMADILLO "./obj_models/Armadillo.obj"
+
 // disallow copy and assign
 #define DISALLOW_COPY_AND_ASSIGN(TypeName)	\
 	TypeName(const TypeName&) = delete;		\

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _AABB_H_
+#define _AABB_H_
 
 #include "iostream"
 #include "openGL_headers.h"
@@ -93,3 +94,5 @@ class AABB
 
 		//DISALLOW_COPY_AND_ASSIGN(AABB);
 };
+
+#endif

@@ -3,7 +3,12 @@
 
 #include "global_headers.h"
 #include "math_headers.h"
+//#include "bvh.h"
 #include "opengl_headers.h"
+//#include "bvh.h"
+
+//class AABB;
+//class NodeBVH;
 
 // TODO: add more primitives here.
 enum PrimitiveType {PLANE, SPHERE, CUBE, OBJMESH};
@@ -42,6 +47,7 @@ public:
 
 protected:
     virtual void init_visualization() {}
+	virtual void InitCollision(){}
 public:
     glm::vec3 m_pos;
     glm::vec3 m_previous_pos;
@@ -53,6 +59,15 @@ protected:
     PrimitiveType m_type;
     std::vector<glm::vec3> m_positions, m_colors, m_normals;
     std::vector<unsigned short> m_indices;
+
+	// for collision
+	EigenVectorXs vec_vertices_;
+	std::vector<uint> triangles_;
+
+	// for collision handling
+	int index_root_;	// index of root node
+	//std::vector<NodeBVH> node_bvhs;
+	//std::vector<AABB>    aabb_bvhs;
 };
 
 class Plane : public Primitive
@@ -110,15 +125,28 @@ protected:
 class ObjMesh : public Primitive
 {
 public:
-    ObjMesh(char* filename) : Primitive(OBJMESH), m_scaling(1.0) {read_from_file(filename);};
-    ObjMesh(char* filename, float scaling) : Primitive(OBJMESH), m_scaling(scaling) {read_from_file(filename);};
-    ObjMesh(char* filename, const glm::vec3 pos, float scaling) : Primitive(OBJMESH, pos), m_scaling(scaling) {read_from_file(filename);};
+    ObjMesh(char* filename) : Primitive(OBJMESH), m_scaling(1.0) 
+	{
+		read_from_file(filename);
+		InitCollision();
+	};
+    ObjMesh(char* filename, float scaling) : Primitive(OBJMESH), m_scaling(scaling) 
+	{
+		read_from_file(filename);
+		InitCollision();
+	};
+    ObjMesh(char* filename, const glm::vec3 pos, float scaling) : Primitive(OBJMESH, pos), m_scaling(scaling) 
+	{
+		read_from_file(filename);
+		InitCollision();
+	};
     ObjMesh(const ObjMesh& other) : Primitive(other), m_scaling(other.m_scaling) {};
     virtual ~ObjMesh() {};
 
     virtual bool StaticIntersectionTest(const EigenVector3& p, EigenVector3& normal, ScalarType& dist);
 protected:
     void read_from_file(char* filename);
+	virtual void InitCollision();
 protected:
     char* m_filename;
     float m_scaling;

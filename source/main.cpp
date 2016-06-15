@@ -371,9 +371,10 @@ void init()
     // scene init
     fprintf(stdout, "Initializing scene...\n");
     g_scene = new Scene(DEFAULT_SCENE_FILE);
-		//Primitive* primitive;
+		Primitive* primitive;
 		//primitive = new Cube();
-		//g_scene->InsertPrimitve(primitive);
+		primitive = new ObjMesh(OBJ_ARMADILLO);
+		g_scene->InsertPrimitve(primitive);
 
     // mesh init
     fprintf(stdout, "Initializing mesh...\n");
