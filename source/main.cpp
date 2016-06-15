@@ -38,6 +38,7 @@ bool g_show_wireframe = false;
 bool g_show_texture = false;
 bool g_texture_load_succeed = false;
 bool g_enable_bending_constrints = false;
+bool g_enable_collision_handling = false;
 
 //----------Mouse Control--------------------//
 int g_mouse_old_x, g_mouse_old_y;
@@ -180,6 +181,9 @@ void display() {
         // Draw overlay
         draw_overlay();
     }
+
+	// Draw bounding box
+	//g_simulation->DrawBoundingBox(g_renderer->getVBO());
 
     // Draw tweak bar
     g_config_bar->Draw();
@@ -367,6 +371,9 @@ void init()
     // scene init
     fprintf(stdout, "Initializing scene...\n");
     g_scene = new Scene(DEFAULT_SCENE_FILE);
+		//Primitive* primitive;
+		//primitive = new Cube();
+		//g_scene->InsertPrimitve(primitive);
 
     // mesh init
     fprintf(stdout, "Initializing mesh...\n");

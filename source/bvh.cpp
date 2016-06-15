@@ -1,9 +1,76 @@
 #include "bvh.h"
 
-int MakeBVHTopologyTopDown(const EigenVectorXs& vec_vertex, const std::vector<int>& triangles, std::vector<NodeBVH>& node_bvhs)
+void BuildBoundingBox
+	(int index_bvh,
+	double delta,
+	std::vector<AABB>& aabb_bvhs,
+	//////////
+	const EigenVectorXs& vec_vertex,
+	const std::vector<int>& triangles,
+	const std::vector<NodeBVH>& node_bvhs)
 {
+	aabb_bvhs.resize(node_bvhs.size());
+	assert(index_bvh < node_bvhs.size());
+
+	int index_child0 = node_bvhs[index_bvh].index_child_[0];
+	int index_child1 = node_bvhs[index_bvh].index_child_[1];
+
+	if (index_child1 == -1)	// leaf node 
+	{
+		int index_triangle = index_child0;
+		assert(index_triangle < triangles.size());
+
+		int index_vertex0 = triangles[index_triangle * 3 + 0];
+		int index_vertex1 = triangles[index_triangle * 3 + 1];
+		int index_vertex2 = triangles[index_triangle * 3 + 2];
+
+		const EigenVector3 vec_vertex0 = vec_vertex.block_vector(index_vertex0);
+		const EigenVector3 vec_vertex1 = vec_vertex.block_vector(index_vertex1);
+		const EigenVector3 vec_vertex2 = vec_vertex.block_vector(index_vertex2);
+
+		AABB& bounding_box = aabb_bvhs[index_bvh];
+		bounding_box.isnt_empty_ = false;
+
+		bounding_box.AddVertex(vec_vertex0.x(), vec_vertex0.y(), vec_vertex0.z(), delta*0.5);
+		bounding_box.AddVertex(vec_vertex1.x(), vec_vertex1.y(), vec_vertex1.z(), delta*0.5);
+		bounding_box.AddVertex(vec_vertex2.x(), vec_vertex2.y(), vec_vertex2.z(), delta*0.5);
+
+		return;
+	}
+
+	// internal node
+	assert(node_bvhs[index_child0].index_root_ == index_bvh);
+	assert(node_bvhs[index_child1].index_root_ == index_bvh);
+	
+	BuildBoundingBox(index_child0, delta, aabb_bvhs, vec_vertex, triangles, node_bvhs);
+	BuildBoundingBox(index_child1, delta, aabb_bvhs, vec_vertex, triangles, node_bvhs);
+
+	AABB& bounding_box = aabb_bvhs[index_bvh];
+	bounding_box.isnt_empty_ = false;
+	bounding_box  = aabb_bvhs[index_child0];
+	bounding_box += aabb_bvhs[index_child1];
+
+	return;
+}
+
+int MakeBVHTopologyTopDown
+	(std::vector<NodeBVH>& node_bvhs,
+	////////////////
+	const EigenVectorXs& vec_vertex, 
+	const std::vector<int>& triangles)
+{
+	std::cout << "Make BVH Topology Top Down" << std::endl;
+
 	std::vector<int> surrounding_triangles;
 	MakeSurroundingTriangles(surrounding_triangles, (int)(vec_vertex.size()/3), triangles);
+
+	////////////////////
+	// check
+	//for (int i = 0; i < surrounding_triangles.size(); ++i)
+	//{
+	//	std::cout << "surrounding_triangles[" << i << "]:" << surrounding_triangles[i] << std::endl;
+	//}
+	////////////////////
 
 	node_bvhs.clear();
 
@@ -22,12 +89,13 @@ int MakeBVHTopologyTopDown(const EigenVectorXs& vec_vertex, const std::vector<in
 	return 0;
 }
 
-static void MakeSurroundingTriangles(std::vector<int>& surrounding_triangles,
-									 //////////
-									 const int vertex_number, 
-									 const std::vector<int>& triangles)
+static void MakeSurroundingTriangles
+	(std::vector<int>& surrounding_triangles,
+	////////////////
+	const int vertex_number, 
+	const std::vector<int>& triangles)
 {
-	const int number_triangle = (int)(triangles.size());
+	const int number_triangle = (int)(triangles.size()/3);
 	const int edge2node[3][2] = { {1,2},{2,0},{0,1} };
 	surrounding_triangles.clear();
 	surrounding_triangles.resize(number_triangle*3,-1);
@@ -157,9 +225,15 @@ void DevideTriangles(int index_root,
 			const EigenVector3& vec_gravity_center0 = ComputeTriangleGravityCenter(index_triangle0, vec_vertex, triangles);
 			if (fabs((vec_gravity_center0 - vec_bounding_box_center).dot(vec_devide_direction)) < 1.0e-10) continue;	// very cloth to Division Plane
 			if ((vec_gravity_center0 - vec_bounding_box_center).dot(vec_devide_direction) < 0) { vec_devide_direction *= -1; }
+			index_kernel_triangle = index_triangle0;
 			break;
 		}
 	}
+	///////////////////
+	// check 
+	//std::cout << "index_kernel_triangle:" << index_kernel_triangle << std::endl;
+	///////////////////
+
 
 	// devide Triangles
 	int index_child0 = (int)node_bvhs.size();
@@ -185,6 +259,11 @@ void DevideTriangles(int index_root,
 
 			for (int i_edge = 0; i_edge < 3; ++i_edge)
 			{
+				//////////////////
+				// check
+				//std::cout <<"i_triangle0 * 3 + i_edge:"<< i_triangle0 * 3 + i_edge << std::endl;
+				//////////////////
+
 				int j_triangle = surrounding_triangles[i_triangle0 * 3 + i_edge];
 				if (j_triangle == -1) continue;
 				if (triangle2node[j_triangle] != index_root) continue;
@@ -256,4 +335,64 @@ EigenVector3 ComputeTriangleGravityCenter(int index_triangle, const EigenVectorX
 	EigenVector3 vec_gravity_center = (vec_vertex.block_vector(index_vertex0) + vec_vertex.block_vector(index_vertex1) + vec_vertex.block_vector(index_vertex2)) / 3.0;
 
 	return vec_gravity_center;
+}
+
+double ComputeDistanceFaceVertex
+	(double& w0,
+	double& w1,
+	double& w2,
+	///////////////
+	const EigenVector3& vec_triangle_vertex0,
+	const EigenVector3& vec_triangle_vertex1,
+	const EigenVector3& vec_triangle_vertex2,
+	const EigenVector3& vec_vertex
+	)
+{
+	EigenVector3 vec_0 = vec_triangle_vertex0 - vec_triangle_vertex2;
+	EigenVector3 vec_1 = vec_triangle_vertex1 - vec_triangle_vertex2;
+
+	double t0 = vec_0.dot(vec_0);
+	double t1 = vec_1.dot(vec_1);
+	double t2 = vec_0.dot(vec_1);
+	double t3 = vec_0.dot(vec_vertex - vec_triangle_vertex2);
+	double t4 = vec_1.dot(vec_vertex - vec_triangle_vertex2);
+	double determinant = t0*t1 - t2*t2;
+	double inverse_determinat = 1.0 / determinant;
+
+	w0 = (+t1*t3 - t2*t4) * inverse_determinat;
+	w1 = (-t2*t3 - t0*t4) * inverse_determinat;
+	w2 = 1 - w0 - w1;
+
+	EigenVector3 vec_foot = w0*vec_triangle_vertex0 + w1*vec_triangle_vertex1 + w2*vec_triangle_vertex2;
+
+	return (vec_foot - vec_vertex).norm();
+}
+
+bool IsContactFaceVertex
+	(int index_triangle_vertex0,
+	int index_triangle_vertex1,
+	int index_triangle_vertex2,
+	int index_vertex,
+	const EigenVector3& vec_triangle_vertex0,
+	const EigenVector3& vec_triangle_vertex1,
+	const EigenVector3& vec_triangle_vertex2,
+	const EigenVector3& vec_vertex,
+	const AABB& aabb,
+	const double delta)
+{
+	if (!aabb.IsInside(vec_vertex.x(), vec_vertex.y(), vec_vertex.z())) return false;
+
+	double height = fabs(Height(vec_triangle_vertex0, vec_triangle_vertex1, vec_triangle_vertex2, vec_vertex));
+	if (height > delta) return false;
+
+	double w0, w1, w2;
+	const double distance = ComputeDistanceFaceVertex(w0, w1, w2, vec_triangle_vertex0, vec_triangle_vertex1, vec_triangle_vertex2, vec_vertex);
+	if (distance > delta) return false;
+
+	double margin = 0.0;
+	if (w0 < -margin || w0 > 1 + margin) return false;
+	if (w1 < -margin || w1 > 1 + margin) return false;
+	if (w2 < -margin || w2 > 1 + margin) return false;
+
+	return true;
 }

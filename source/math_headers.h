@@ -22,7 +22,7 @@
 
 
 // eigen vectors and matrices
-typedef unsigned int uint;
+typedef int uint;
 typedef int IndexType;
 
 typedef Eigen::Matrix<ScalarType, 2, 1, 0, 2, 1> EigenVector2;

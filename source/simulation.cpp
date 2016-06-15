@@ -24,6 +24,9 @@ void Simulation::Reset()
     setupConstraints();
     SetReprefactorFlag();
 
+	index_root_ = MakeBVHTopologyTopDown(node_bvhs, m_mesh->vec_current_position_, m_mesh->triangles_);
+	BuildBoundingBox(index_root_, 0.01, aabb_bvhs, m_mesh->vec_current_position_, m_mesh->triangles_, node_bvhs);
+
     m_selected_attachment_constraint = NULL;
 }
 
@@ -57,6 +60,11 @@ void Simulation::DrawConstraints(const VBO& vbos)
     {
         (*it)->Draw(vbos);
     }
+}
+
+void Simulation::DrawBoundingBox(const VBO& vbos)
+{
+	aabb_bvhs[0].Draw(vbos);
 }
 
 ScalarType Simulation::TryToSelectAttachmentConstraint(const EigenVector3& p0, const EigenVector3& dir)

@@ -8,6 +8,7 @@
 #include "mesh.h"
 #include "constraint.h"
 #include "scene.h"
+#include "bvh.h"
 
 class Mesh;
 class AntTweakBarWrapper;
@@ -38,6 +39,7 @@ public:
     void Reset();
     void Update();
     void DrawConstraints(const VBO& vbos);
+	void DrawBoundingBox(const VBO& vbos);
 
     // select/unselect/move attachment constratins
     ScalarType TryToSelectAttachmentConstraint(const EigenVector3& p0, const EigenVector3& dir); // return ray_projection_plane_distance if hit; return -1 otherwise.
@@ -94,6 +96,11 @@ protected:
     SparseMatrix m_J_matrix;
     bool m_prefatorization_flag[PREFACTOR_TOTAL_NUM];
     Eigen::SimplicialLLT<SparseMatrix, Eigen::Upper> m_prefactored_solver[PREFACTOR_TOTAL_NUM];
+
+	// for collision handling
+	int index_root_;	// index of root node
+	std::vector<NodeBVH> node_bvhs;
+	std::vector<AABB>    aabb_bvhs;
 
 private:
 

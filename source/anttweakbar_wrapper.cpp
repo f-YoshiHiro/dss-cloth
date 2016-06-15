@@ -12,6 +12,7 @@ static ScalarType g_old_stretch_stiffness;
 static ScalarType g_old_bending_stiffness;
 static ScalarType g_old_attachment_stiffness;
 static bool g_old_enable_bending_constrints;
+static bool g_old_enable_collision_handling;
 
 //----------Global Parameters----------------//
 extern int g_screen_width;
@@ -24,6 +25,7 @@ extern bool g_pause;
 extern bool g_show_wireframe;
 extern bool g_show_texture;
 extern bool g_enable_bending_constrints;
+extern bool g_enable_collision_handling;
 
 //----------anttweakbar handlers----------//
 extern void TW_CALL reset_simulation(void*);
@@ -108,6 +110,8 @@ void AntTweakBarWrapper::Init()
     TwAddVarRW(m_sim_bar, "Damping Coefficient", TW_TYPE_SCALAR_TYPE, &g_simulation->m_damping_coefficient, " min=0 step=0.001 group='Constants' ");
 	// constraints control
 	TwAddVarRW(m_sim_bar, "Enable Bending Constraint", TwType(sizeof(bool)), &(g_enable_bending_constrints), "group='Constraints Control'");
+	// collision control
+	TwAddVarRW(m_sim_bar, "Enable Collision Handling", TwType(sizeof(bool)), &(g_enable_collision_handling), "group='Collision Control'");
 
     // !simulation settings bar
 
@@ -190,9 +194,11 @@ int AntTweakBarWrapper::Update()
         g_old_attachment_stiffness = g_simulation->m_stiffness_attachment;
 		atb_feedback = ATB_CHANGE_STIFFNESS;
     }
-	if (g_old_enable_bending_constrints != g_enable_bending_constrints)
+	if (g_old_enable_bending_constrints != g_enable_bending_constrints ||\
+		g_old_enable_collision_handling != g_enable_collision_handling)
 	{
 		g_old_enable_bending_constrints = g_enable_bending_constrints;
+		g_old_enable_collision_handling = g_enable_collision_handling;
 		atb_feedback = ATB_NEED_RESET;
 	}
     

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "iostream"
+#include "openGL_headers.h"
+#include "primitive.h"
 #include "math_headers.h"
 
 // class "Axis Aligned Bounding Box"
@@ -29,10 +31,57 @@ class AABB
 			isnt_empty_ = true;
 		}
 
+		AABB(const AABB& aabb)
+			:x_min_(aabb.x_min_),	x_max_(aabb.x_max_),
+			y_min_(aabb.y_min_),	y_max_(aabb.y_max_),
+			z_min_(aabb.x_min_),	z_max_(aabb.z_max_),
+			isnt_empty_(aabb.isnt_empty_){}
 
 		~AABB(){}
 
+		/*AABB& operator= (const AABB& aabb)
+		{
+			if (!aabb.isnt_empty_) return *this;
+
+			x_min_ = aabb.x_min_;	x_max_ = aabb.x_max_;
+			y_min_ = aabb.y_min_;	y_max_ = aabb.y_max_;
+			z_min_ = aabb.z_min_;	z_max_ = aabb.z_max_;
+			isnt_empty_ = aabb.isnt_empty_;
+
+			return *this;
+		}*/
+
+		AABB& operator+= (const AABB& aabb)
+		{
+			if (!aabb.isnt_empty_) return *this;
+
+			if (!isnt_empty_)
+			{
+				x_max_ = aabb.x_max_;	x_min_ = aabb.x_min_;
+				y_max_ = aabb.y_max_;	y_min_ = aabb.y_min_;
+				z_max_ = aabb.z_max_;	z_min_ = aabb.z_min_;
+				this->isnt_empty_ = aabb.isnt_empty_;
+
+				return *this;
+			}
+
+			x_max_ = (x_max_ > aabb.x_max_) ? x_max_ : aabb.x_max_;
+			x_min_ = (x_min_ < aabb.x_min_) ? x_min_ : aabb.x_min_;
+			y_max_ = (y_max_ > aabb.y_max_) ? y_max_ : aabb.y_max_;
+			y_min_ = (y_min_ < aabb.y_min_) ? y_min_ : aabb.y_min_;
+			z_max_ = (z_max_ > aabb.z_max_) ? z_max_ : aabb.z_max_;
+			z_min_ = (z_min_ < aabb.z_min_) ? z_min_ : aabb.z_min_;
+
+			return *this;
+		}
+
+
 		bool AddVertex(double x, double y, double z, double margin);
+
+		bool IsInside(double x, double y, double z) const;
+
+
+		void Draw(const VBO& vbos);
 
 		double x_min_, x_max_;
 		double y_min_, y_max_;
@@ -40,5 +89,7 @@ class AABB
 		bool isnt_empty_;
 
 	private:
-		DISALLOW_COPY_AND_ASSIGN(AABB);
+		Cube aabb_body_;
+
+		//DISALLOW_COPY_AND_ASSIGN(AABB);
 };
